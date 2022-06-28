@@ -1,11 +1,12 @@
 import re
-sep=[';', ',', '\n', ':', '[', ']', '{', '}', '(', ')',' ','@']
-oper=[ '*', '/', '%', '+', '-', '<','>', '=', '!','.','"', "'"]
+sep=[';', ',', '\n', ':', '[', ']', '{', '}', '(', ')',' ']
+oper=[ '*', '/', '%', '+', '-', '<','>', '=', '!','.',"'",'"']
 digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 keyword=["intg", "flt", "chrc", "strg","yes", "no", "check", "ncheckall",
                  "ncheck", "floop", "wloop", "both", "only", "nop", "room", "mine",
                  "__initi__", "fun", "display" ]
-assignments = ['+=', '-=', '*=', '/=', '%=', '=']
+assignments = ['=','+=', '-=', '*=', '/=', '%=']
+incdic= ['++','--']
 MDM = ['*', '/', '%']
 PM = ['+', '-']
 ROP = ['<', '>', '>=', '<=', '!=', '==']
@@ -14,6 +15,7 @@ quotes = ['"', "'"]
 f=open("file.txt")
 words=f.read()
 
+ABC=['*','++','--','/', '%', '+', '-', '<','>', '=', '!','.','+=', '-=', '*=', '/=', '%=', '=','<', '>', '>=', '<=', '!=', '==',';', ',', '\n', ':', '[', ']', '{', '}', '(', ')',' ']
 
 
 def wordbreaker(words):
@@ -48,7 +50,7 @@ def wordbreaker2(wb):
     nwb=[]
     lex=""
     while(i<=(len(wb))):
-        if (wb[i]=="<"and wb[i+1]=="!")or (wb[i]=='"')or(wb[i]=="'")or(wb[i] in oper and wb[i+1]=="=") or (wb[i]=="+" and wb[i+1]=="+") or (wb[i]=="-" and wb[i+1]=="-" ):
+        if (wb[i]=="<"and wb[i+1]=="!")or (wb[i]=='"')or(wb[i]=="'")or(((wb[i] in oper)or wb[i]=="=") and wb[i+1]=="=") or (wb[i]=="+" and wb[i+1]=="+") or (wb[i]=="-" and wb[i+1]=="-" )or  ((is_int_constant(wb[i])) and (wb[i+1]==".") and (is_int_constant(wb[i+2]))):
             
                 if wb[i]=="<"and wb[i+1]=="!":
                         lex+=wb[i]
@@ -115,6 +117,19 @@ def wordbreaker2(wb):
                                         i+=1
                                         lex=""
                                         break
+                elif((is_int_constant(wb[i])) and (wb[i+1]==".") and (is_int_constant(wb[i+2]))):
+                    lex+=wb[i]
+                    lex+=wb[i+1]
+                    lex+=wb[i+2]
+                    nwb.append(lex)
+                    lex=""
+                    i+=3
+                    if i== (len(wb)-1):
+                                    nwb.append(lex)
+                                    break
+                    
+                    
+                    
                 
                 elif wb[i]=="+" and wb[i+1]=="+":
                                 lex+= wb[i]
@@ -125,7 +140,7 @@ def wordbreaker2(wb):
                                 if i== (len(wb)-1):
                                         break
                                 i+=2
-                elif (wb[i] in oper and wb[i+1]=="="):
+                elif (((wb[i] in oper)or wb[i]=="=") and wb[i+1]=="="):
                                 lex+= wb[i]
                                 lex+= wb[i+1]
                                 nwb.append(lex)
@@ -345,13 +360,17 @@ def tok(nwb):
                         break
                 i+=1
                 
-        elif(nwb[i] in sep or nwb[i] in oper ):
+        elif(nwb[i] in ABC):
                 if(nwb[i] in sep) and (nwb[i] != "\n"):
                     classpart="Sep"
                 elif(nwb[i] == "\n"):
                     lineno+=1
+                elif(nwb[i] == assignments or nwb[i] == '=' ):
+                    classpart="Assignment"
                 elif(nwb[i] in MDM):
                     classpart="MDM"
+                elif(nwb[i] in incdic):
+                    classpart="IncDec"
                 elif(nwb[i] in PM):
                     classpart="PM"
                 elif(nwb[i] in ROP):
@@ -370,8 +389,8 @@ def tok(nwb):
                         break
                 i+=1
                 
-        elif(isDigit(nwb[i]) or ((nwb[i][0] == '+' or nwb[i][0] == '-') and (nwb not in oper))):
-            if(is_int_constant(nwb[i])):
+        
+        elif(is_int_constant(nwb[i])):
                 classpart="Int"
                 valuepart=nwb[i]
                 ntoken.append(lineno)
@@ -384,21 +403,8 @@ def tok(nwb):
                 if i== (len(nwb)-1):
                         break
                 i+=1
-            elif(is_int_float(nwb[i])):
+        elif(is_int_float(nwb[i])):
                 classpart="Float"
-                valuepart=nwb[i]
-                ntoken.append(lineno)
-                ntoken.append(classpart)
-                ntoken.append(valuepart)
-                token.append(ntoken)
-                ntoken=[]
-                classpart=""
-                
-                if i== (len(nwb)-1):
-                        break
-                i+=1
-            else:
-                classpart="Error"
                 valuepart=nwb[i]
                 ntoken.append(lineno)
                 ntoken.append(classpart)
